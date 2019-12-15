@@ -1,11 +1,11 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
+using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using System.Threading;
+using System.IO;
 using System.Threading.Tasks;
+using Paragraph = DocumentFormat.OpenXml.Wordprocessing.Paragraph;
 
 namespace SampleConsole
 {
@@ -13,18 +13,26 @@ namespace SampleConsole
     {
         static void Main(string[] args)
         {
-            ThreadPool.GetAvailableThreads(out int availableThreads, out int port);
-            Console.WriteLine(availableThreads);
-            Console.WriteLine(port);
-            ThreadPool.SetMinThreads(1, 1);
-            ThreadPool.SetMaxThreads(2, 1);
-
-            Console.WriteLine(ThreadPool.ThreadCount);
-            Console.WriteLine(ThreadPool.PendingWorkItemCount);
-            Console.WriteLine(ThreadPool.CompletedWorkItemCount);
-            Console.ReadKey();
-
-            MyAsyncMethod();
+            var path = @"D:\Hadi Samadzad.docx";
+            //byte[] file = File.ReadAllBytes(path);
+            using (WordprocessingDocument wordDoc = WordprocessingDocument.Open(path, true))
+            {
+                string docText = null;
+                using (StreamReader sr = new StreamReader(wordDoc.MainDocumentPart.GetStream()))
+                {
+                    docText = sr.ReadToEnd();
+                }
+                // here i will manipuldate docText
+                MemoryStream ms = new MemoryStream();
+                using (WordprocessingDocument wordDocument =
+                    WordprocessingDocument.Create(ms, WordprocessingDocumentType.Document, true))
+                {
+                    MainDocumentPart mainPart = wordDocument.AddMainDocumentPart();
+                    Body body = new Body(new Paragraph(new DocumentFormat.OpenXml.Drawing.Run(new DocumentFormat.OpenXml.Drawing.Text(docText))));
+                    mainPart.Document = new Document(body);
+                }
+                File.WriteAllBytes(@"D:\New Hadi.docx", ms.ToArray());
+            }
 
             Console.ReadKey();
         }
